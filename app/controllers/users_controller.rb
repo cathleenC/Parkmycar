@@ -61,6 +61,26 @@ class UsersController < ApplicationController
     end
   end
 
+    def log
+    @user=User.where(email: login_params['email']).first
+    respond_to do |format|
+      if @user.password==login_params['password']
+        session[:user_id]=@user.id
+        format.json {render json: {"user_id"=>@user.id}}
+      else
+        format.json { render json: @user.errors, status: :unprocessable_entity }
+      end
+    end
+  end 
+
+  def logout
+    @user=User.where(id: session[:user_id]).first
+    session[:user_id]=nil
+    respond_to do |format|
+       format.json { head :no_content }
+    end
+  end 
+
   private
     # Use callbacks to share common setup or constraints between actions.
     def set_user

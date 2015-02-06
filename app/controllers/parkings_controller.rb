@@ -61,6 +61,48 @@ class ParkingsController < ApplicationController
     end
   end
 
+    # POST /queue_model/1/book.json
+  def book
+    @verif=Booking.where(uid: session[:user_id], pid: params[:id])
+    if @verif!=nil
+          @booking = Booking.new
+          @booking.uid=session[:user_id]
+          # On précise que cet object Booking dépend de la queue concernée
+          @booking.pid = params[:id]
+          @booking.time = Time.now 
+
+          @parking = Parking.find(params[:id])
+          @parking.taken=@parking.taken+1
+          @parking.save
+
+          respond_to do |format|
+            if @booking.save
+              format.json 
+            else
+              format.json { render json: @booking.errors, status: :unprocessable_entity }
+            end
+          end
+    else
+      format.json { render json: @booking.errors, status: :unprocessable_entity }
+    end
+  end
+
+  def endbook
+    @booking= Booking.where(queue_model_id: params[:id], user_id: session[:user_id]).take!
+    @booking.end = Time.now
+
+    @queue_model = QueueModel.find(params[:id])
+    @queue_model.num_customer=Booking.where(queue_model_id: params[:id], end: nil).count
+    @queue_model.save
+    respond_to do |format|
+      if @booking.save
+        format.json
+      else
+        format.json { render json: @booking.errors, status: :unprocessable_entity }
+      end
+    end
+  end
+
   private
     # Use callbacks to share common setup or constraints between actions.
     def set_parking
